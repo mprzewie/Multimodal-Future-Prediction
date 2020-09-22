@@ -5,7 +5,35 @@ import argparse
 import sys
 from utils import writeFloat
 from scipy import misc
-from imageio import imwrite 
+from imageio import imwrite
+
+def writeFloat(name, data):
+    f = open(name, 'wb')
+
+    dim=len(data.shape)
+    # if dim>3:
+    #     raise Exception('bad float file dimension: %d' % dim)
+
+    f.write(('float\n').encode('ascii'))
+    f.write(('%d\n' % dim).encode('ascii'))
+
+    if dim == 1:
+        f.write(('%d\n' % data.shape[0]).encode('ascii'))
+    else:
+        f.write(('%d\n' % data.shape[1]).encode('ascii'))
+        f.write(('%d\n' % data.shape[0]).encode('ascii'))
+        for i in range(2, dim):
+            f.write(('%d\n' % data.shape[i]).encode('ascii'))
+
+    data = data.astype(np.float32)
+    if dim==2:
+        data.tofile(f)
+    elif dim==3:
+        np.transpose(data, (2, 0, 1)).tofile(f)
+    elif dim==4:
+        np.transpose(data, (3, 2, 0, 1)).tofile(f)
+    else:
+        raise Exception('bad float file dimension: %d' % dim)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("output_folder", help='destination folder for the produced data')
