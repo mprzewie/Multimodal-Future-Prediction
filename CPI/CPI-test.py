@@ -2,8 +2,10 @@ from Environment import Environment
 import os
 import numpy as np
 import argparse
-import tb
 import sys
+from utils import writeFloat
+from scipy import misc
+from imageio import imwrite 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("output_folder", help='destination folder for the produced data')
@@ -36,13 +38,13 @@ def get_mask(objects):
 for i in range(int(args.n_scenes)):
     print('processing scene_%07d' % i)
     scene_path = os.path.join(args.output_folder, 'scene_%07d' % i)
-    os.makedirs(scene_path)
+    os.makedirs(scene_path, exist_ok=True)
     env = Environment(512, 512)
     env.draw_cross_road()
     env.init_pedestrian()
     env.init_vehicle()
     env.draw_cross_road()
-    tb.write(os.path.join(scene_path, '-background.png'), np.array(env.get_image()))
+    imwrite(os.path.join(scene_path, '-background.png'), np.array(env.get_image()))
     env.next_state()
 
     for j in range(hist):
@@ -51,8 +53,8 @@ for i in range(int(args.n_scenes)):
         env.draw_objects()
         sample = env.get_image()
         locs = env.get_objects_locations()
-        tb.write(os.path.join(scene_path, '-sample%03d.png' % (j)), np.array(sample))
-        tb.write(os.path.join(scene_path, '-sample%03d.float3' % (j)), locs)
+        imwrite(os.path.join(scene_path, '-sample%03d.png' % (j)), np.array(sample))
+        writeFloat(os.path.join(scene_path, '-sample%03d.float3' % (j)), locs)
 
     # multiple ground truths for the same input sequence
     for k in range(int(args.n_gts)):
@@ -65,4 +67,4 @@ for i in range(int(args.n_scenes)):
             current_env.draw_objects()
             if (l+1) in dists:
                 locs = current_env.get_objects_locations()
-                tb.write(os.path.join(scene_path, '%03d-%06d-%03d-objects.float3' % (hist - 1, k, l)), locs)
+                writeFloat(os.path.join(scene_path, '%03d-%06d-%03d-objects.float3' % (hist - 1, k, l)), locs)
