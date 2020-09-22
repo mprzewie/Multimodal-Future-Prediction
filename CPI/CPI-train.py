@@ -1,11 +1,10 @@
-from Environment import Environment
-import os
-import numpy as np
 import argparse
-from scipy import misc
-import sys
+import os
+
+import numpy as np
+from Environment import Environment
+from imageio import imwrite
 from utils import writeFloat, locs_to_sdd_features
-from imageio import imwrite 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("output_folder", help='destination folder for the produced data')

@@ -1,39 +1,10 @@
-from Environment import Environment
-import os
-import numpy as np
 import argparse
-import sys
-from utils import writeFloat
-from scipy import misc
+import os
+
+import numpy as np
+from Environment import Environment
 from imageio import imwrite
-
-def writeFloat(name, data):
-    f = open(name, 'wb')
-
-    dim=len(data.shape)
-    # if dim>3:
-    #     raise Exception('bad float file dimension: %d' % dim)
-
-    f.write(('float\n').encode('ascii'))
-    f.write(('%d\n' % dim).encode('ascii'))
-
-    if dim == 1:
-        f.write(('%d\n' % data.shape[0]).encode('ascii'))
-    else:
-        f.write(('%d\n' % data.shape[1]).encode('ascii'))
-        f.write(('%d\n' % data.shape[0]).encode('ascii'))
-        for i in range(2, dim):
-            f.write(('%d\n' % data.shape[i]).encode('ascii'))
-
-    data = data.astype(np.float32)
-    if dim==2:
-        data.tofile(f)
-    elif dim==3:
-        np.transpose(data, (2, 0, 1)).tofile(f)
-    elif dim==4:
-        np.transpose(data, (3, 2, 0, 1)).tofile(f)
-    else:
-        raise Exception('bad float file dimension: %d' % dim)
+from utils import writeFloat, locs_to_sdd_features
 
 parser = argparse.ArgumentParser()
 parser.add_argument("output_folder", help='destination folder for the produced data')
@@ -44,7 +15,6 @@ parser.add_argument("dist", help='prediction horizon')
 args = parser.parse_args()
 
 hist = int(args.history)
-#dists = [10, 20, 30, 40]
 dists = [int(args.dist)]
 
 def get_mask(objects):
@@ -67,6 +37,9 @@ for i in range(int(args.n_scenes)):
     print('processing scene_%07d' % i)
     scene_path = os.path.join(args.output_folder, 'scene_%07d' % i)
     os.makedirs(scene_path, exist_ok=True)
+    os.makedirs(f"{scene_path}/imgs", exist_ok=True)
+    os.makedirs(f"{scene_path}/floats", exist_ok=True)
+
     env = Environment(512, 512)
     env.draw_cross_road()
     env.init_pedestrian()
@@ -81,8 +54,12 @@ for i in range(int(args.n_scenes)):
         env.draw_objects()
         sample = env.get_image()
         locs = env.get_objects_locations()
-        imwrite(os.path.join(scene_path, '-sample%03d.png' % (j)), np.array(sample))
-        writeFloat(os.path.join(scene_path, '-sample%03d.float3' % (j)), locs)
+        prefix = f"hist_{j}"
+        imwrite(os.path.join(scene_path, f'imgs/{prefix}-img-resized.jpg'),np.array(sample))
+        sdd_feats = locs_to_sdd_features(locs)
+
+        writeFloat(os.path.join(scene_path, f'floats/{prefix}-features.float3'), sdd_feats)
+    scene_lines = []
 
     # multiple ground truths for the same input sequence
     for k in range(int(args.n_gts)):
@@ -93,6 +70,18 @@ for i in range(int(args.n_scenes)):
             current_env.next_state()
             current_env.draw_cross_road()
             current_env.draw_objects()
-            if (l+1) in dists:
+            if (l+1) == int(args.dist):
                 locs = current_env.get_objects_locations()
-                writeFloat(os.path.join(scene_path, '%03d-%06d-%03d-objects.float3' % (hist - 1, k, l)), locs)
+                sample = current_env.get_image()
+
+                prefix = f"future_{k}"
+                sdd_feats = locs_to_sdd_features(locs)
+                writeFloat(os.path.join(scene_path, f'floats/{prefix}-features.float3'), sdd_feats)
+                imwrite(os.path.join(scene_path, f'imgs/{prefix}-img-resized.jpg'), np.array(sample))
+                for i in range(len(sdd_feats)):
+                    scene_lines.append(f"{i} hist_0,hist_1,hist_2,{prefix}\n")
+
+                # writeFloat(os.path.join(scene_path, '%03d-%06d-%03d-objects.float3' % (hist - 1, k, l)), locs)
+                break
+    with open(os.path.join(scene_path, "scene.txt"), "w") as f:
+        f.writelines(scene_lines)
