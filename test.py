@@ -10,6 +10,8 @@ from utils_np import *
 from utils_tf import *
 from config import *
 import argparse
+from sklearn.mixture.gaussian_mixture import _compute_precision_cholesky
+
 
 parser = argparse.ArgumentParser(description='Test all scenes in a dataset')
 parser.add_argument('--output', help='write output images', action='store_true')
@@ -45,6 +47,7 @@ dataset = Dataset(data_path)
 nll_sum = 0
 semd_sum = 0
 counter = 0
+przemd_sum =0
 # Run the test for each sequence for each scene
 for scene_index in range(len(dataset.scenes)):
     scene = dataset.scenes[scene_index]
@@ -70,15 +73,24 @@ for scene_index in range(len(dataset.scenes)):
         gt_object = decode_obj(testing_sequence.objects[-1], testing_sequence.id)
         if write_output_flag:
             drawn_img_hyps = draw_hyps(testing_sequence.imgs[-1], hyps, gt_object, objects)
-            cv2.imwrite(os.path.join(result_scene_path, '%d-hyps.jpg' % i), drawn_img_hyps)
+            cv2.imwrite(os.path.join(result_scene_path, f'{scene_index}-{i}-hyps.jpg'), drawn_img_hyps)
             draw_heatmap(testing_sequence.imgs[-1], means, sigmas, mixture_weights, objects, width, height,
-                         os.path.join(result_scene_path, '%d-heatmap.jpg' % i), gt=gt_object)
+                         os.path.join(result_scene_path, f'{scene_index}-{i}-heatmap.jpg'), gt=gt_object)
         nll = compute_nll(means, sigmas, mixture_weights, gt_object)
         semd = get_multimodality_score(means, sigmas, mixture_weights)
+        
+        ####
+        przemd = przemd_from_gmm(means, sigmas, mixture_weights)
+        
+        ####
+        
         print('NLL: %5.2f,\t SEMD: %5.2f' % (nll, semd))
+        print(f"PRZEMD: {przemd}")
         nll_sum += nll
         semd_sum += semd
+        przemd_sum += przemd
         counter += 1
 print('--------------- AVERAGE METRICS ---------------')
 print('NLL: %.2f,\t SEMD: %.2f, Number of samples: %d' %
       (nll_sum/counter, semd_sum/counter, counter))
+print(f"PRZEMD {przemd_sum / counter}")

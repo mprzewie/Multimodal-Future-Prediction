@@ -4,7 +4,7 @@ import math
 import cv2
 from sklearn import mixture
 from sklearn.mixture import GaussianMixture
-from sklearn.mixture.gaussian_mixture import _compute_precision_cholesky
+from sklearn.mixture.gaussian_mixture import _compute_precision_cholesky, GaussianMixture as GMM
 import matplotlib.pyplot as plt
 from wemd import computeWEMD
 
@@ -139,6 +139,7 @@ def draw_heatmap(img_path, means, sigmas, weights, objects, width, height, outpu
     vmax = np.max(Z)
     vmin = np.min(Z)
     plt.imshow(img)
+    print(X.shape, Y.shape, Z.shape)
     plt.contourf(X, Y, Z, cmap=transparent_cmap(plt.cm.jet), vmin=vmin, vmax=vmax)
     plt.axis('off')
     plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
@@ -245,3 +246,29 @@ def get_multimodality_score(means, sigmas, weights):
     ratio = computeWEMD(Z, Z_uni)
     return ratio
 
+
+def przemd_from_gmm(means, sigmas, weights):
+    means_stacked = np.concatenate(means, axis=0)[:, :, 0, 0]
+    sigmas_stacked = np.concatenate(sigmas, axis=0)[:, :, 0, 0]
+    weights_stacked = np.concatenate(weights, axis=0)[:, 0, 0, 0]
+    gmm = GaussianMixture(n_components=4, covariance_type='diag')
+    gmm_vars = 2 * sigmas_stacked * sigmas_stacked
+    precisions_cholesky = _compute_precision_cholesky(gmm_vars, 'diag')
+    gmm.weights_ = weights_stacked
+    gmm.means_ = means_stacked
+    gmm.precisions_cholesky_ = precisions_cholesky
+    gmm.covariances_ = gmm_vars
+    y_sampled, _ = gmm.sample(1000)
+    przemd = wemd_from_pred_samples(y_sampled)
+    
+    return przemd
+def wemd_from_samples(samples_1, samples_2, bins=512):
+    hist_1, *_ = np.histogram2d(samples_1[:, 0], samples_1[:, 1], bins=np.linspace(0, bins, bins))
+    hist_2, *_ = np.histogram2d(samples_2[:, 0], samples_2[:, 1], bins=np.linspace(0, bins, bins))
+    return computeWEMD(hist_1, hist_2)
+
+def wemd_from_pred_samples(y_pred, ):
+    gmm = GMM(covariance_type="diag")
+    gmm = gmm.fit(y_pred)
+    y_s, _ = gmm.sample(len(y_pred))
+    return wemd_from_samples(y_s, y_pred)

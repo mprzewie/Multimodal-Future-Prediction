@@ -1,5 +1,5 @@
 
-DATASET_PATH = {'SDD': 'datasets/SDD/test/'}
+DATASET_PATH = {'SDD': '/mnt/users/mprzewiezlikowski/local_truten/sdd/data/test'}
 
 DATASET_RESOLUTION = {'SDD': (320, 576)}
 
