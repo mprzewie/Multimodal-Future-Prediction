@@ -47,7 +47,7 @@ dataset = Dataset(data_path)
 nll_sum = 0
 semd_sum = 0
 counter = 0
-przemd_sum =0
+multimod_emd_sum =0
 # Run the test for each sequence for each scene
 for scene_index in range(len(dataset.scenes)):
     scene = dataset.scenes[scene_index]
@@ -80,17 +80,17 @@ for scene_index in range(len(dataset.scenes)):
         semd = get_multimodality_score(means, sigmas, mixture_weights)
         
         ####
-        przemd = przemd_from_gmm(means, sigmas, mixture_weights)
+        multimod_emd = multimod_emd_from_gmm(means, sigmas, mixture_weights)
         
         ####
         
         print('NLL: %5.2f,\t SEMD: %5.2f' % (nll, semd))
-        print(f"PRZEMD: {przemd}")
+        print(f"Multimod emd: {multimod_emd}")
         nll_sum += nll
         semd_sum += semd
-        przemd_sum += przemd
+        multimod_emd_sum += multimod_emd
         counter += 1
 print('--------------- AVERAGE METRICS ---------------')
 print('NLL: %.2f,\t SEMD: %.2f, Number of samples: %d' %
       (nll_sum/counter, semd_sum/counter, counter))
-print(f"PRZEMD {przemd_sum / counter}")
+print(f"Multimod emd {multimod_emd_sum / counter}")

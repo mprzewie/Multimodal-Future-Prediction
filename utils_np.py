@@ -247,7 +247,7 @@ def get_multimodality_score(means, sigmas, weights):
     return ratio
 
 
-def przemd_from_gmm(means, sigmas, weights):
+def multimod_emd_from_gmm(means, sigmas, weights):
     means_stacked = np.concatenate(means, axis=0)[:, :, 0, 0]
     sigmas_stacked = np.concatenate(sigmas, axis=0)[:, :, 0, 0]
     weights_stacked = np.concatenate(weights, axis=0)[:, 0, 0, 0]
@@ -259,9 +259,8 @@ def przemd_from_gmm(means, sigmas, weights):
     gmm.precisions_cholesky_ = precisions_cholesky
     gmm.covariances_ = gmm_vars
     y_sampled, _ = gmm.sample(1000)
-    przemd = wemd_from_pred_samples(y_sampled)
+    return wemd_from_pred_samples(y_sampled)
     
-    return przemd
 def wemd_from_samples(samples_1, samples_2, bins=512):
     hist_1, *_ = np.histogram2d(samples_1[:, 0], samples_1[:, 1], bins=np.linspace(0, bins, bins))
     hist_2, *_ = np.histogram2d(samples_2[:, 0], samples_2[:, 1], bins=np.linspace(0, bins, bins))
