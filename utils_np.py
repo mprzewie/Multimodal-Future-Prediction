@@ -138,8 +138,10 @@ def draw_heatmap(img_path, means, sigmas, weights, objects, width, height, outpu
 
     vmax = np.max(Z)
     vmin = np.min(Z)
+
+    h, w, _ = img.shape
+    plt.figure(figsize=(w // 25, h // 25,))
     plt.imshow(img)
-    print(X.shape, Y.shape, Z.shape)
     plt.contourf(X, Y, Z, cmap=transparent_cmap(plt.cm.jet), vmin=vmin, vmax=vmax)
     plt.axis('off')
     plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
