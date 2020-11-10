@@ -75,7 +75,7 @@ for scene_index in range(len(dataset.scenes)):
             drawn_img_hyps = draw_hyps(testing_sequence.imgs[-1], hyps, gt_object, objects)
             cv2.imwrite(os.path.join(result_scene_path, f'{scene_index}-{i}-hyps.jpg'), drawn_img_hyps)
             draw_heatmap(testing_sequence.imgs[-1], means, sigmas, mixture_weights, objects, width, height,
-                         os.path.join(result_scene_path, f'{scene_index}-{i}-heatmap.jpg'), gt=gt_object)
+                         os.path.join(result_scene_path, f'{scene_index}-{i}-heatmap.png'), gt=gt_object)
         nll = compute_nll(means, sigmas, mixture_weights, gt_object)
         semd = get_multimodality_score(means, sigmas, mixture_weights)
         
